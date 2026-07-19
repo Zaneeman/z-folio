@@ -100,46 +100,48 @@ export default function IndexView({
       </div>
 
       <div
-        className={`mx-auto mt-8 flex w-[40vw] flex-col gap-0.5 ${
-          isExiting ? "tiles-exit" : isEntering ? "tiles-enter" : ""
-        }`}
-      >
-        {PROJECTS.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => onProjectClick(item)}
-            className="group relative block aspect-[3/1] cursor-pointer overflow-hidden transition-transform duration-500 hover:scale-105 hover:-translate-y-4"
-          >
-            <img
-              src={item.thumbnail}
-              alt={item.title}
-              className="
-                h-full
-                w-full
-                object-cover
-              "
-            />
-
+        className="mx-auto mt-8 max-w-5xl">
+        <div
+          className={`flex flex-col gap-0.5 ${isExiting ? "tiles-exit" : isEntering ? "tiles-enter" : ""
+            }`}
+        >
+          {PROJECTS.map((item) => (
             <div
-              className="
-                pointer-events-none
-                absolute
-                inset-0
-                bg-gradient-to-t
-                from-ink/70
-                via-transparent
-                to-transparent
-              "
-            />
+              key={item.id}
+              onClick={() => onProjectClick(item)}
+              className="group flex cursor-pointer items-start gap-4"
+            >
+              <div className="w-2/3 aspect-[2/1] overflow-hidden">
+                <img
+                  src={item.thumbnail}
+                  alt={item.title}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
 
-            <div className="pointer-events-none absolute bottom-1.5 right-2 text-right">
-              <p className="text-[11px] tracking-wide uppercase text-paper">
-                {item.title}
-              </p>
-              <p className="text-[10px] text-paper/70">{item.year}</p>
+              <div className="w-1/3 aspect-square text-left">
+                <h3 className="text-[15px] uppercase tracking-tight text-ink">
+                  {item.title}
+                </h3>
+
+                <p className="mt-2 text-[10px] uppercase tracking-wide2 text-mute">
+                  {item.category} — {item.year}
+                </p>
+
+                <p className="mt-1 text-[10px] uppercase tracking-wide2 text-ink/60">
+                  {item.location}
+                </p>
+
+                {item.description && (
+                  <p className="mt-3 text-[10px] leading-relaxed text-ink/70">
+                    {item.description}
+                  </p>
+                )}
+                
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -98,7 +98,7 @@ body {
 }
  
 #rotator[data-state="index"] {
-  width: 150vh;
+  width: 100vh;
   height: 100vw;
   transform: rotate(-90deg);
 }

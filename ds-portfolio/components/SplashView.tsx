@@ -10,6 +10,18 @@ const GAP = 16;
 // Scroll distance (px) over which the intro overlay fades to nothing.
 const FADE_DISTANCE = 320;
 
+// Each image starts offset downward, as if extra space still separated it
+// from the frame, and settles into place as it scrolls into view — closing
+// that gap reads as the image sliding up into frame. Transform/opacity
+// only (not a real margin) so revealing an image never triggers layout
+// reflow on its neighbors.
+const REVEAL_HIDDEN = ["opacity-0", "translate-y-16"] as const;
+const REVEAL_SHOWN = ["opacity-100", "translate-y-0"] as const;
+
+// How far below the visible frame an image can still be and start
+// revealing early, so it settles into place right as it crosses in.
+const REVEAL_LOOKAHEAD = 80;
+
 export default function SplashView({ images }: { images: string[] }) {
   const pool = images.length > 0 ? images : FEATURED_PROJECT.images;
 
@@ -21,6 +33,7 @@ export default function SplashView({ images }: { images: string[] }) {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const imgMap = useRef(new Map<string, HTMLImageElement>());
 
   // Overlay is a sibling of the scrolling grid, absolutely positioned
   // against the scroll container itself (not the page), so it stays
@@ -38,6 +51,44 @@ export default function SplashView({ images }: { images: string[] }) {
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Reveal each image as it scrolls into the frame, instead of everything
+  // just sitting there statically positioned. Driven by the same scroll
+  // event as the overlay fade above (not IntersectionObserver): the two
+  // masonry columns are rarely the same height, so a short column's last
+  // image can sit well above a tall column's — checking every unrevealed
+  // image's position against the current scroll offset on every scroll
+  // tick guarantees it eventually gets revealed even if it was skipped
+  // over by a fast/instant scroll (e.g. a "scroll to bottom" jump),
+  // whereas an observer that only fires on entering a viewport region can
+  // permanently miss an element that never lingered there.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    if (reduceMotion) {
+      imgMap.current.forEach((img) => img.classList.add(...REVEAL_SHOWN));
+      return;
+    }
+
+    const revealInView = () => {
+      const bottom = el.clientHeight + REVEAL_LOOKAHEAD;
+      imgMap.current.forEach((img) => {
+        if (img.dataset.revealed) return;
+        if (img.offsetTop - el.scrollTop > bottom) return;
+        img.dataset.revealed = "true";
+        img.classList.remove(...REVEAL_HIDDEN);
+        img.classList.add(...REVEAL_SHOWN);
+      });
+    };
+
+    revealInView();
+    el.addEventListener("scroll", revealInView, { passive: true });
+    return () => el.removeEventListener("scroll", revealInView);
+  }, []);
+
   return (
     <div
       ref={scrollRef}
@@ -51,9 +102,13 @@ export default function SplashView({ images }: { images: string[] }) {
             {col.map((src) => (
               <img
                 key={src}
+                ref={(el) => {
+                  if (el) imgMap.current.set(src, el);
+                  else imgMap.current.delete(src);
+                }}
                 src={src}
                 alt=""
-                className="block h-auto w-full"
+                className="block h-auto w-full opacity-0 translate-y-16 transition-all duration-700 ease-out"
               />
             ))}
           </div>
