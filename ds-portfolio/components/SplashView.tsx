@@ -125,19 +125,19 @@ export default function SplashView({ images }: { images: string[] }) {
         <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/40 to-transparent" />
 
         <div className="relative px-6 pb-10 pt-20 sm:px-12 sm:pb-14 sm:pt-24">
-          <p className="mb-3 text-[11px] uppercase tracking-wide3 text-paper/70">
+          <p className="mb-3 text-[clamp(9px,1.8vw,11px)] uppercase tracking-wide3 text-paper/70">
             {FEATURED_PROJECT.category} — {FEATURED_PROJECT.year}
           </p>
 
-          <h1 className="text-[13vw] font-medium uppercase leading-[0.9] tracking-tightest2 text-paper sm:text-[5vw]">
+          <h1 className="text-[clamp(32px,10vw,96px)] font-medium uppercase leading-[0.9] tracking-tightest2 text-paper">
             {FEATURED_PROJECT.title}
           </h1>
 
-          <p className="mt-6 max-w-md text-[10px] leading-relaxed text-paper/80">
+          <p className="mt-6 max-w-md text-[clamp(9px,1.8vw,10px)] leading-relaxed text-paper/80">
             {FEATURED_PROJECT.description}
           </p>
 
-          <p className="mt-4 text-[11px] uppercase tracking-wide2 text-paper/60">
+          <p className="mt-4 text-[clamp(9px,1.8vw,11px)] uppercase tracking-wide2 text-paper/60">
             {FEATURED_PROJECT.location}
           </p>
         </div>
