@@ -145,7 +145,7 @@ export const PROJECTS = [
 export type Project = (typeof PROJECTS)[number];
 
 export const FEATURED_PROJECT = {
-  title: "Zane Ayers - Designer",
+  title: "Zane Ayers",
   location: "Fay Jones School of Design",
   year: "2028",
   category: "Expected Graduation",

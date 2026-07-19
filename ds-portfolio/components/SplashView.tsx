@@ -129,7 +129,7 @@ export default function SplashView({ images }: { images: string[] }) {
             {FEATURED_PROJECT.category} — {FEATURED_PROJECT.year}
           </p>
 
-          <h1 className="text-[clamp(32px,10vw,96px)] font-medium uppercase leading-[0.9] tracking-tightest2 text-paper">
+          <h1 className="text-[clamp(16px,10vw,64px)] font-medium uppercase leading-[0.9] tracking-tightest2 text-paper">
             {FEATURED_PROJECT.title}
           </h1>
 
