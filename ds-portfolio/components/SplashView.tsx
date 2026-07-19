@@ -60,15 +60,16 @@ export default function SplashView({ images }: { images: string[] }) {
         ))}
       </div>
 
-      {/* Intro text — overlays the top of the grid, fading out as the
-          user scrolls past it rather than sitting above the images. */}
+      {/* Intro text — anchored to the bottom-left of the frame, overlaying
+          the grid beneath it, fading out as the user scrolls away from
+          the top of the page. */}
       <div
         ref={overlayRef}
-        className="pointer-events-none absolute inset-x-0 top-0 z-10"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-ink/85 via-ink/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/40 to-transparent" />
 
-        <div className="relative px-6 pb-16 pt-10 sm:px-12 sm:pt-14">
+        <div className="relative px-6 pb-10 pt-20 sm:px-12 sm:pb-14 sm:pt-24">
           <p className="mb-3 text-[11px] uppercase tracking-wide3 text-paper/70">
             {FEATURED_PROJECT.category} — {FEATURED_PROJECT.year}
           </p>
