@@ -25,7 +25,7 @@ type OutgoingPane = { project: Project | null };
 export default function AppShell({
   featuredImages,
 }: {
-  featuredImages: Record<string, string[]>;
+  featuredImages: string[];
 }) {
   const { state, isIndex } = useRotation();
 
