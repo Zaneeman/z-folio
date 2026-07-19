@@ -1,0 +1,267 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ 
+:root {
+  --rotation-duration: 300ms;
+  --rotation-ease: cubic-bezier(0.12, 0.8, 0.25, 1);
+  --accent: #2b4eff;
+}
+ 
+html,
+body {
+  background: #FFFFFF;
+  color: #0a0a0a;
+  overscroll-behavior: none;
+}
+ 
+* {
+  box-sizing: border-box;
+}
+ 
+/*
+  ROTATION GEOMETRY
+  ------------------
+  #stage is a fixed, viewport-locked window with overflow hidden.
+  #rotator is the single element that carries the entire application.
+  transform-origin is pinned to its own top-left corner (0 0) and
+  NEVER gets a translate() alongside the rotate() — that combination
+  is what causes a wandering/incorrect-looking pivot.
+ 
+  Why: when transform is an animated list like
+  "translate(0,0) rotate(0deg)" -> "translate(100vw,0) rotate(90deg)",
+  the browser interpolates translate() and rotate() independently and
+  simultaneously. translate(x) slides linearly while rotate() sweeps
+  through its arc at the same time, so no single point stays fixed
+  for the middle of the transition — only the two endpoints happen to
+  line up. Visually this reads as the hinge drifting toward whichever
+  corner the translate is dragging it, not the top-left corner you
+  actually asked to pin.
+ 
+  A truly fixed hinge requires the animated transform to be rotate()
+  ALONE. Rotation about a fixed transform-origin leaves that origin
+  point invariant at every instant of the animation, not just at the
+  start and end.
+ 
+  Splash (0deg):
+    width: 100vw, height: 100vh, transform: rotate(0deg).
+ 
+  Index (rotated):
+    width and height are swapped (100vh / 100vw) so the element keeps
+    representing "the same page, now on its side" — this is a sizing
+    choice only and does not move the top-left corner, since the
+    element is pinned with top:0; left:0 regardless of its own
+    width/height.
+    transform: rotate(-90deg) — CSS rotate() is clockwise-positive on
+    screen, so -90deg is the counterclockwise swing: the point
+    straight below the pivot (bottom-left) sweeps to the point
+    straight right of the pivot (top-right), exactly the "sheet of
+    paper pinned at the top-left, swung CCW" behavior. Reversing the
+    state (index -> splash) animates the same rotate() value back
+    from -90deg to 0deg, which is the exact geometric inverse (a
+    clockwise swing, bottom-left's current position — now top-right —
+    swinging back down to bottom-left) for free, with no separate
+    logic needed.
+ 
+  Both width/height and the rotate() transform are animated together
+  on the same transition, so the sheet still reads as one continuous
+  motion rather than a cut between two layouts.
+*/
+ 
+#stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 50;
+}
+ 
+#rotator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  transform-origin: 50px 50px;
+  transform: rotate(0deg);
+  transition:
+    transform var(--rotation-duration) var(--rotation-ease),
+    width var(--rotation-duration) var(--rotation-ease),
+    height var(--rotation-duration) var(--rotation-ease);
+  will-change: transform, width, height;
+  background: transparent;
+}
+ 
+#rotator > * {
+  pointer-events: auto;
+}
+ 
+#rotator[data-state="index"] {
+  width: 150vh;
+  height: 100vw;
+  transform: rotate(-90deg);
+}
+ 
+@media (prefers-reduced-motion: reduce) {
+  #rotator {
+    transition: none;
+  }
+}
+ 
+/*
+  CONTENT PANE
+  ------------
+  The readable main content (hero / index directory) sits as a sibling
+  layer beneath the rotating chrome, always upright. It crossfades and
+  eases in step with the rotation timing so the whole thing still
+  reads as one continuous transition, without needing a second nested
+  rotation to keep body text legible mid-turn.
+*/
+#content-pane {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+
+  transform-origin: top left;
+  transform: rotate(90deg);
+
+  transition:
+    transform var(--rotation-duration) var(--rotation-ease);
+
+  z-index: 1;
+}
+
+#content-pane[data-state="index"] {
+  transform: rotate(0deg);
+}
+
+/*
+  PROJECT PANE ENTER/EXIT
+  ------------------------
+  Keyframe animations rather than transitions: a transition needs the
+  browser to have already painted the "from" style before the "to" style
+  is applied, which races with React's commit timing. A keyframe
+  animation always plays its "from" state deterministically as soon as
+  the element is inserted, so pairing .pane-enter with a remount (a
+  changed React key) reliably replays it on every navigation.
+*/
+@keyframes pane-slide-in {
+  from {
+    transform: translateY(66%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pane-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.pane-enter {
+  animation: pane-slide-in 700ms cubic-bezier(0.12, 0.8, 0.25, 1) both;
+}
+
+.pane-exit {
+  animation: pane-fade-out 700ms cubic-bezier(0.12, 0.8, 0.25, 1) both;
+}
+
+/* The index's project-tile stack additionally slides left as it exits,
+   layered on top of the .pane-exit fade on its parent. */
+@keyframes tiles-slide-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+.tiles-exit {
+  animation: tiles-slide-out 400ms cubic-bezier(0.5, 0.8, 0.25, 1) both;
+}
+
+/*
+  REVERSE VARIANTS — Back to Index
+  ---------------------------------
+  The literal inverse motion of .pane-enter / .pane-exit / .tiles-exit
+  above, used when closing a project back to the index: the project pane
+  now leaves the way it arrived (slides out to the right) and the index
+  returns the way its tiles left (fades in as a whole, tiles sliding back
+  in from the left).
+*/
+@keyframes pane-slide-out {
+  from {
+    transform: translateY(0vh);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(66vh);
+    opacity: 0;
+  }
+}
+
+@keyframes pane-fade-in {
+  from {
+    transform: translateY(-100vh);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0vh);
+    opacity: 1;
+  }
+}
+
+@keyframes tiles-slide-in {
+  from {
+    transform: translateY(-100vh);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0vh);
+    opacity: 1;
+  }
+}
+
+.pane-exit-reverse {
+  animation: pane-slide-out 1400ms cubic-bezier(0.12, 0.8, 0.25, 1) both;
+}
+
+.pane-enter-reverse {
+  animation: pane-fade-in 1000ms cubic-bezier(0.12, 0.8, 0.25, 1) both;
+}
+
+.tiles-enter {
+  animation: tiles-slide-in 800ms cubic-bezier(0.5, 0.8, 0.25, 1) both;
+}
+
+/*
+  RELATED-PROJECT "REEL" TRANSITION
+  -----------------------------------
+  Project -> project navigation (via a related-projects link) has no CSS
+  animation of its own — see the effect in AppShell.tsx that stacks the
+  outgoing project directly above the incoming one in true document flow
+  and lets the browser's native scrollIntoView carry the view down
+  through whatever's left of the current page and into the new one.
+*/
+
+@media (prefers-reduced-motion: reduce) {
+  .pane-enter,
+  .pane-exit,
+  .tiles-exit,
+  .pane-exit-reverse,
+  .pane-enter-reverse,
+  .tiles-enter {
+    animation: none;
+  }
+}
