@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { FEATURED_PROJECT } from "@/lib/constants";
 
@@ -31,11 +31,17 @@ const ROWS = 6;
 // Square base unit — keeps a "1x1" cell a true 1:1 square and a "2x2" cell
 // a true 1:1 square at 2x scale, so the "<cols>x<rows>" filename prefix
 // (see lib/images.ts) always matches what's actually rendered on screen.
-const CELL_W = 380;
-const CELL_H = 380;
-const GUTTER = 12;
-const BLOCK_W = COLS * CELL_W;
-const BLOCK_H = ROWS * CELL_H;
+//
+// The cell is sized relative to the viewport (see `cellSize` state below)
+// rather than as a fixed pixel constant — a hardcoded 380px cell reads as
+// a small tile on a desktop viewport but as a nearly full-width tile on a
+// phone, so the grid looked completely different in scale device to
+// device. Deriving it from viewport width/COLS keeps the same relative
+// proportions everywhere, clamped so it never gets illegibly tiny or
+// absurdly huge.
+const MIN_CELL = 90;
+const MAX_CELL = 420;
+const GUTTER_RATIO = 12 / 380; // preserves the original gutter-to-cell ratio
 const MARGIN = 240; // pre-render slack (px) beyond the viewport edges
 
 // Bento layout: [col, row, colSpan, rowSpan] on a COLS x ROWS grid.
@@ -66,15 +72,6 @@ type Tile = {
   shape: string;
 };
 
-const BASE_TILES: Tile[] = BENTO.map(([c, r, cw, ch], k) => ({
-  k,
-  x: c * CELL_W + GUTTER / 2,
-  y: r * CELL_H + GUTTER / 2,
-  w: cw * CELL_W - GUTTER,
-  h: ch * CELL_H - GUTTER,
-  shape: `${cw}x${ch}`,
-}));
-
 export default function SplashView({
   images,
 }: {
@@ -103,6 +100,29 @@ export default function SplashView({
     return pool[((t.k + ci * 3 + cj * 7) % pool.length + pool.length) % pool.length];
   };
 
+  // Cell size in px, derived from viewport width (see MIN_CELL/MAX_CELL
+  // above) so the bento grid keeps the same relative proportions on a
+  // phone as on a desktop instead of a fixed pixel size that reads as a
+  // totally different scale device to device. 380 is only the pre-measure
+  // fallback for the very first paint.
+  const [cellSize, setCellSize] = useState(380);
+  const gutter = cellSize * GUTTER_RATIO;
+  const blockW = COLS * cellSize;
+  const blockH = ROWS * cellSize;
+
+  const baseTiles = useMemo<Tile[]>(
+    () =>
+      BENTO.map(([c, r, cw, ch], k) => ({
+        k,
+        x: c * cellSize + gutter / 2,
+        y: r * cellSize + gutter / 2,
+        w: cw * cellSize - gutter,
+        h: ch * cellSize - gutter,
+        shape: `${cw}x${ch}`,
+      })),
+    [cellSize, gutter]
+  );
+
   const rootRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -127,10 +147,10 @@ export default function SplashView({
     if (!w || !h) return;
     const { x, y } = offset.current;
     const next = {
-      ci0: Math.floor((-x - MARGIN) / BLOCK_W),
-      ci1: Math.floor((-x + w + MARGIN) / BLOCK_W),
-      cj0: Math.floor((-y - MARGIN) / BLOCK_H),
-      cj1: Math.floor((-y + h + MARGIN) / BLOCK_H),
+      ci0: Math.floor((-x - MARGIN) / blockW),
+      ci1: Math.floor((-x + w + MARGIN) / blockW),
+      cj0: Math.floor((-y - MARGIN) / blockH),
+      cj1: Math.floor((-y + h + MARGIN) / blockH),
     };
     const cur = winRef.current;
     if (
@@ -188,8 +208,11 @@ export default function SplashView({
     if (hintRef.current) hintRef.current.style.opacity = "0";
   };
 
-  // Measure the viewport and keep the block window in sync.
-  useEffect(() => {
+  // Measure the viewport and keep the block window (and cell size) in
+  // sync. useLayoutEffect so this resolves before the first paint —
+  // otherwise the grid would flash at the 380px fallback cell size for a
+  // frame before snapping to the viewport-relative size.
+  useLayoutEffect(() => {
     reduceMotion.current = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
@@ -200,6 +223,9 @@ export default function SplashView({
     const measure = () => {
       const r = el.getBoundingClientRect();
       size.current = { w: r.width, h: r.height };
+      const target = r.width / COLS;
+      const next = Math.min(Math.max(target, MIN_CELL), MAX_CELL);
+      setCellSize((prev) => (Math.abs(prev - next) > 0.5 ? next : prev));
       apply();
     };
     measure();
@@ -209,6 +235,15 @@ export default function SplashView({
     return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-sync the pan/window math once cellSize actually changes (the
+  // `apply()` call inside measure() above still ran against the *old*
+  // blockW/blockH, since the setCellSize state update hasn't re-rendered
+  // yet at that point).
+  useLayoutEffect(() => {
+    apply();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cellSize]);
 
   // Wheel / trackpad panning (non-passive so we can stop the page scroll).
   useEffect(() => {
@@ -283,9 +318,9 @@ export default function SplashView({
     const out: { key: string; src: string; left: number; top: number; w: number; h: number }[] = [];
     for (let cj = win.cj0; cj <= win.cj1; cj++) {
       for (let ci = win.ci0; ci <= win.ci1; ci++) {
-        for (const t of BASE_TILES) {
-          const ax = ci * BLOCK_W + t.x;
-          const ay = cj * BLOCK_H + t.y;
+        for (const t of baseTiles) {
+          const ax = ci * blockW + t.x;
+          const ay = cj * blockH + t.y;
           if (ax + t.w < left || ax > right || ay + t.h < top || ay > bottom) continue;
           out.push({
             key: `${ci}:${cj}:${t.k}`,
@@ -300,7 +335,7 @@ export default function SplashView({
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [win, images]);
+  }, [win, images, baseTiles, blockW, blockH]);
 
   return (
     <div

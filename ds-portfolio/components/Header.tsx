@@ -13,7 +13,9 @@ export default function Header({
   const { toggle, isIndex } = useRotation();
   const displayTitle = isIndex ? "Z-FOLIO" : SITE_TITLE;
   const displayBack = isIndex ? "↑ Index" : "↓";
-  const size2 = isProject ? "text-[24px]" : "text-[12px]";
+  const size2 = isProject
+    ? "text-[clamp(16px,5vw,24px)]"
+    : "text-[clamp(9px,2.5vw,12px)]";
   const color2 = isProject ? "text-ink" : "text-mute";
 
 
@@ -29,7 +31,7 @@ export default function Header({
            items-center
             justify-left
            [writing-mode:vertical-rl]
-            text-[60px]
+            text-[clamp(28px,8vw,60px)]
             tracking-wide2
             font-futura
             hover:opacity-60
