@@ -141,6 +141,9 @@ export const PROJECTS = [
     ],
   },
 ]
+
+export type Project = (typeof PROJECTS)[number];
+
 export const FEATURED_PROJECT = {
   title: "Zane Ayers - Designer",
   location: "Fay Jones School of Design",
@@ -155,4 +158,4 @@ export const FEATURED_PROJECT = {
     "/images/projects/featured/004.jpg",
     "/images/projects/featured/005.jpg",
   ],
-  };
+};
