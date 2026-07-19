@@ -152,10 +152,10 @@ export const FEATURED_PROJECT = {
   description:
     "Architecture student pursuing a B.Arch and B.A. in Mathematics with a strong focus on computational design, parametric systems, and spatial logic. Experienced in Rhino and Grasshopper workflows, with the ability to translate conceptual ideas into precise, competition-level drawings and robust digital models. Known for strong communication and collaborative skills developed through tutoring and team-based work, and for adapting quickly to new software and design challenges. Motivated by the intersection of design thinking, mathematical structure, and architectural expression.",
   images: [
-    "/images/projects/featured/001.jpg",
-    "/images/projects/featured/002.jpg",
-    "/images/projects/featured/003.jpg",
-    "/images/projects/featured/004.jpg",
-    "/images/projects/featured/005.jpg",
+    "/images/projects/featured/1x1.001.jpg",
+    "/images/projects/featured/1x1.002.jpg",
+    "/images/projects/featured/2x1.001.jpg",
+    "/images/projects/featured/2x1.003.jpg",
+    "/images/projects/featured/2x2.001.jpg",
   ],
 };
