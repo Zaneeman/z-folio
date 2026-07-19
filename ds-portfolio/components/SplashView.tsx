@@ -133,7 +133,7 @@ export default function SplashView({ images }: { images: string[] }) {
             {FEATURED_PROJECT.title}
           </h1>
 
-          <p className="mt-6 max-w-md text-[clamp(9px,1.8vw,10px)] leading-relaxed text-paper/80">
+          <p className="mt-6 hidden max-w-md text-[clamp(9px,1.8vw,10px)] leading-relaxed text-paper/80 sm:block">
             {FEATURED_PROJECT.description}
           </p>
 
