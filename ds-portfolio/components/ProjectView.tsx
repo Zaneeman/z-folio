@@ -30,7 +30,7 @@ export default function ProjectView({
                         className="
                             block
                             w-full
-                            h-screen
+                            h-auto
                             object-cover
                         "
                     />

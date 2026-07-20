@@ -18,7 +18,7 @@ export default function IndexView({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-paper px-6 pt-10 pb-24 sm:px-12 sm:pt-14">
+    <div className="h-full w-full overflow-y-auto bg-ink px-6 pt-10 pb-24 sm:px-12 sm:pt-14">
       <div className="mx-auto max-w-5xl">
         <label className="block">
           <span className="sr-only">Search projects</span>
@@ -27,7 +27,7 @@ export default function IndexView({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search…"
-            className="w-full border border-ink bg-transparent px-4 py-3 text-[clamp(11px,2vw,13px)] tracking-wide outline-none focus:border-[var(--accent)]"
+            className="w-full border border-paper bg-transparent px-4 py-3 text-[clamp(11px,2vw,13px)] tracking-wide outline-none focus:border-[var(--accent)]"
           />
         </label>
 
@@ -42,7 +42,7 @@ export default function IndexView({
                   className={`text-[clamp(12px,2.8vw,17px)] uppercase tracking-tight transition-colors ${
                     activeCategory === cat
                       ? "text-[var(--accent)]"
-                      : "text-ink hover:text-mute"
+                      : "text-paper hover:text-mute"
                   }`}
                 >
                   {cat}
@@ -61,7 +61,7 @@ export default function IndexView({
                   }
                   className={`group text-[clamp(12px,2.8vw,17px)] uppercase tracking-tight transition-colors ${activeCategory === cat
                       ? "text-[var(--accent)]"
-                      : "text-mute hover:text-ink"
+                      : "text-mute hover:text-paper"
                     }`}
                 >
                   {cat.split("").map((letter, i) => (
@@ -89,7 +89,7 @@ export default function IndexView({
           </ul>
         </div>
 
-        <div className="mt-12 flex items-center justify-between border-t border-ink/20 pt-4 text-[clamp(9px,1.8vw,11px)] uppercase tracking-wide2 text-mute">
+        <div className="mt-12 flex items-center justify-between border-t border-paper/20 pt-4 text-[clamp(9px,1.8vw,11px)] uppercase tracking-wide2 text-mute">
           <label className="flex items-center gap-2">
 
           </label>
@@ -120,7 +120,7 @@ export default function IndexView({
               </div>
 
               <div className="w-1/3 aspect-square text-left">
-                <h3 className="text-[clamp(12px,2.5vw,15px)] uppercase tracking-tight text-ink">
+                <h3 className="text-[clamp(12px,2.5vw,15px)] uppercase tracking-tight text-paper">
                   {item.title}
                 </h3>
 
@@ -128,12 +128,12 @@ export default function IndexView({
                   {item.category} — {item.year}
                 </p>
 
-                <p className="mt-1 text-[clamp(9px,1.8vw,10px)] uppercase tracking-wide2 text-ink/60">
+                <p className="mt-1 text-[clamp(9px,1.8vw,10px)] uppercase tracking-wide2 text-paper/60">
                   {item.location}
                 </p>
 
                 {item.description && (
-                  <p className="mt-3 text-[clamp(9px,1.8vw,10px)] leading-relaxed text-ink/70">
+                  <p className="mt-3 text-[clamp(9px,1.8vw,10px)] leading-relaxed text-paper/70">
                     {item.description}
                   </p>
                 )}

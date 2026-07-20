@@ -16,16 +16,17 @@ export default function Header({
   const size2 = isProject
     ? "text-[clamp(16px,5vw,24px)]"
     : "text-[clamp(9px,2.5vw,12px)]";
-  const color2 = isProject ? "text-ink" : "text-mute";
+  const color2 = isIndex ? "text-paper" : "text-ink";
+  const background = isIndex ? "bg-ink" : "bg-paper";
 
 
   return (
     <>
-      <div className="absolute top-0 left-0 h-full w-12 sm:w-14 border-r border-ink/80 bg-paper flex items-start justify-center pt-8">
+      <div className={`absolute top-0 left-0 h-full w-12 sm:w-14 border-r border-ink/80 ${background} flex items-start justify-center pt-8`}>
         <button
           onClick={toggle}
           aria-label="Return to project view"
-         className="
+          className={`
            h-full
             flex
            items-center
@@ -37,7 +38,8 @@ export default function Header({
             hover:opacity-60
             transition-opacity
            whitespace-nowrap
-           "
+             ${color2}
+           `}
         >
           {displayTitle}
         </button>
