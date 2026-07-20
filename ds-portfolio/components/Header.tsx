@@ -33,7 +33,7 @@ export default function Header({
            [writing-mode:vertical-rl]
             text-[clamp(28px,8vw,60px)]
             tracking-wide2
-            font-futura
+            font-medium
             hover:opacity-60
             transition-opacity
            whitespace-nowrap

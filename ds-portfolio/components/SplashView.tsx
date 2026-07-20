@@ -7,20 +7,29 @@ import { FEATURED_PROJECT } from "@/lib/constants";
 // value the whole grid is built from, so spacing never drifts.
 const GAP = 16;
 
+// Outer side margins, 3x the gap between images.
+const SIDE_MARGIN = GAP * 3;
+
 // Scroll distance (px) over which the intro overlay fades to nothing.
 const FADE_DISTANCE = 320;
 
-// Each image starts offset downward, as if extra space still separated it
-// from the frame, and settles into place as it scrolls into view — closing
-// that gap reads as the image sliding up into frame. Transform/opacity
-// only (not a real margin) so revealing an image never triggers layout
-// reflow on its neighbors.
-const REVEAL_HIDDEN = ["opacity-0", "translate-y-16"] as const;
-const REVEAL_SHOWN = ["opacity-100", "translate-y-0"] as const;
+// Each image starts offset this far downward and eases up to translateY(0)
+// as it scrolls into the frame — closing that gap reads as the image
+// sliding up into place. Transform/opacity only (not a real margin) so
+// revealing an image never triggers layout reflow on its neighbors.
+const REVEAL_TRAVEL = 140;
 
-// How far below the visible frame an image can still be and start
-// revealing early, so it settles into place right as it crosses in.
-const REVEAL_LOOKAHEAD = 80;
+// The reveal is scroll-linked, not a timed CSS transition: an image's
+// offset is a direct function of scroll position, computed fresh on every
+// scroll event, so it moves exactly in step with the scroll instead of
+// racing an independent clock. REVEAL_LEAD is how far below the visible
+// frame the motion starts (px); REVEAL_ZONE is the total scroll distance
+// the slide plays out over. Ending the zone above the visible edge
+// (REVEAL_ZONE > REVEAL_LEAD) means part of the slide happens while the
+// image is already on screen, so the motion is actually visible rather
+// than resolving entirely off-screen before it ever appears.
+const REVEAL_LEAD = 60;
+const REVEAL_ZONE = 480;
 
 export default function SplashView({ images }: { images: string[] }) {
   const pool = images.length > 0 ? images : FEATURED_PROJECT.images;
@@ -51,16 +60,20 @@ export default function SplashView({ images }: { images: string[] }) {
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Reveal each image as it scrolls into the frame, instead of everything
-  // just sitting there statically positioned. Driven by the same scroll
-  // event as the overlay fade above (not IntersectionObserver): the two
-  // masonry columns are rarely the same height, so a short column's last
-  // image can sit well above a tall column's — checking every unrevealed
-  // image's position against the current scroll offset on every scroll
-  // tick guarantees it eventually gets revealed even if it was skipped
-  // over by a fast/instant scroll (e.g. a "scroll to bottom" jump),
-  // whereas an observer that only fires on entering a viewport region can
-  // permanently miss an element that never lingered there.
+  // Reveal each image as a direct function of scroll position, instead of
+  // a scroll-triggered timed transition — moving it exactly in step with
+  // the scroll rather than racing an independent clock. Driven by the same
+  // scroll event as the overlay fade above (not IntersectionObserver): the
+  // two masonry columns are rarely the same height, so a short column's
+  // last image can sit well above a tall column's — checking every
+  // image's position on every scroll tick guarantees it still gets placed
+  // correctly even if a fast/instant scroll (e.g. "scroll to bottom")
+  // jumps straight past where it would normally be mid-travel.
+  //
+  // Every image is recomputed on every tick (nothing gets locked in once
+  // "settled") so scrolling back up reverses the same motion — an image
+  // eases back down and fades out exactly as it eased in, instead of
+  // staying permanently revealed.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -69,34 +82,39 @@ export default function SplashView({ images }: { images: string[] }) {
       "(prefers-reduced-motion: reduce)"
     ).matches;
     if (reduceMotion) {
-      imgMap.current.forEach((img) => img.classList.add(...REVEAL_SHOWN));
+      imgMap.current.forEach((img) => {
+        img.style.transform = "";
+        img.style.opacity = "";
+      });
       return;
     }
 
-    const revealInView = () => {
-      const bottom = el.clientHeight + REVEAL_LOOKAHEAD;
+    const updatePositions = () => {
+      const start = el.clientHeight + REVEAL_LEAD;
+      const end = start - REVEAL_ZONE;
       imgMap.current.forEach((img) => {
-        if (img.dataset.revealed) return;
-        if (img.offsetTop - el.scrollTop > bottom) return;
-        img.dataset.revealed = "true";
-        img.classList.remove(...REVEAL_HIDDEN);
-        img.classList.add(...REVEAL_SHOWN);
+        const top = img.offsetTop - el.scrollTop;
+        const progress = Math.min(1, Math.max(0, (start - top) / (start - end)));
+        img.style.transform = `translateY(${REVEAL_TRAVEL * (1 - progress)}px)`;
+        img.style.opacity = String(progress);
       });
     };
 
-    revealInView();
-    el.addEventListener("scroll", revealInView, { passive: true });
-    return () => el.removeEventListener("scroll", revealInView);
+    updatePositions();
+    el.addEventListener("scroll", updatePositions, { passive: true });
+    return () => el.removeEventListener("scroll", updatePositions);
   }, []);
 
   return (
     <div
       ref={scrollRef}
-      className="relative h-full w-full overflow-y-auto bg-paper ml-12 sm:ml-14"
+      className="relative h-full w-[calc(100%-3rem)] overflow-y-auto bg-paper ml-12 sm:ml-14 sm:w-[calc(100%-3.5rem)]"
     >
-      {/* Image grid — full-bleed to the container's edges, only the
-          gaps between images are ever visible. */}
-      <div className="grid grid-cols-2" style={{ gap: GAP }}>
+      {/* Image grid — outer side margins are 3x the gap between images. */}
+      <div
+        className="grid grid-cols-2"
+        style={{ gap: GAP, paddingLeft: SIDE_MARGIN, paddingRight: SIDE_MARGIN }}
+      >
         {columns.map((col, ci) => (
           <div key={ci} className="flex flex-col" style={{ gap: GAP }}>
             {col.map((src) => (
@@ -108,7 +126,11 @@ export default function SplashView({ images }: { images: string[] }) {
                 }}
                 src={src}
                 alt=""
-                className="block h-auto w-full opacity-0 translate-y-16 transition-all duration-700 ease-out"
+                style={{
+                  transform: `translateY(${REVEAL_TRAVEL}px)`,
+                  opacity: 0,
+                }}
+                className="block h-auto w-full"
               />
             ))}
           </div>
@@ -122,9 +144,7 @@ export default function SplashView({ images }: { images: string[] }) {
         ref={overlayRef}
         className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/40 to-transparent" />
-
-        <div className="relative px-6 pb-10 pt-20 sm:px-12 sm:pb-14 sm:pt-24">
+        <div className="relative px-6 pb-10 pt-20 pl-8 sm:px-12 sm:pb-14 sm:pt-24 sm:pl-14">
           <p className="mb-3 text-[clamp(9px,1.8vw,11px)] uppercase tracking-wide3 text-paper/70">
             {FEATURED_PROJECT.category} — {FEATURED_PROJECT.year}
           </p>
