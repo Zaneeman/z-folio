@@ -7,8 +7,10 @@ import { FEATURED_PROJECT } from "@/lib/constants";
 // value the whole grid is built from, so spacing never drifts.
 const GAP = 16;
 
-// Outer side margins, 3x the gap between images.
-const SIDE_MARGIN = GAP * 3;
+// Outer side margins scale with viewport width instead of a fixed px
+// value: virtually 0 on small screens (never more than the gap between
+// images at most), growing up to 3x the gap on desktop.
+const SIDE_MARGIN = `clamp(0px, 3.2vw, ${GAP * 3}px)`;
 
 // Scroll distance (px) over which the intro overlay fades to nothing.
 const FADE_DISTANCE = 320;

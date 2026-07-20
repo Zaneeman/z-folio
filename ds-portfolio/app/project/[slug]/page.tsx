@@ -24,19 +24,16 @@ export default async function ProjectPage({
         "
         >
 
-            {/* Image gallery */}
-            <section className="mt-16">
+            {/* Image gallery — scaled to the page's max width instead of
+                full-bleed viewport width, at each image's native aspect
+                ratio rather than a forced full-screen crop. */}
+            <section className="mx-auto mt-16 max-w-5xl">
                 {project.images.map((image, i) => (
                     <img
                         key={image}
                         src={image}
                         alt={`${project.title} ${i + 1}`}
-                        className="
-              block
-              w-full
-              h-screen
-              object-cover
-            "
+                        className="block h-auto w-full"
                     />
                 ))}
             </section>
